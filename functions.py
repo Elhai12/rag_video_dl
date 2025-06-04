@@ -1,4 +1,5 @@
 import streamlit as st
+from langsmith import expect
 from pinecone import Pinecone, ServerlessSpec, IndexEmbed, EmbedModel
 from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate, SystemMessagePromptTemplate
 from langchain_core.output_parsers.string import StrOutputParser
@@ -8,11 +9,22 @@ from langchain_mistralai import ChatMistralAI
 from langchain_groq import ChatGroq
 import json
 from urllib.parse import urlparse, parse_qs
-import re
+import os
+from dotenv import load_dotenv
+
+
+
 
 @st.cache_resource
 def import_index():
-    key_pincone = st.secrets["pincone"]
+
+    try:
+        key_pincone = st.secrets.get("pincone")
+    except Exception as e:
+        if "streamlit" in str(e).lower():
+            load_dotenv()
+            key_pincone = os.getenv("pincone")
+
 
     index_name = "rag-video"
     pc = Pinecone(api_key=key_pincone)
@@ -20,8 +32,8 @@ def import_index():
     return index
 
 
-def query_index(query, top_k=3):
-    index = import_index()
+def query_index(index,query, top_k=3):
+
     query_payload = {
         "inputs": {
             "text": query
@@ -50,20 +62,19 @@ def query_index(query, top_k=3):
 
 @st.cache_resource
 def setup_model():
-    key_mistral = st.secrets["mistral"]
-
-    groq_key = st.secrets["groq"]
+    try:
+        key_mistral = st.secrets.get("mistral")
+    except Exception as e:
+        if "streamlit" in str(e).lower():
+            load_dotenv()
+            key_mistral = os.getenv("mistral")
 
     llm = ChatMistralAI(
         model="devstral-small-2505",
 
         mistral_api_key= key_mistral
     )
-    groq_model = ChatGroq(
-        model="llama-3.1-8b-instant",
-        api_key=groq_key
 
-    )
     system_prompt = SystemMessagePromptTemplate.from_template(
         """
          Create quality summarize for each part of th three provided transcript's clips.         
@@ -89,20 +100,14 @@ def setup_model():
         summary_clip2: str
         summary_clip3: str
 
-    # if model_selected == 'llama-3.1-8b':
-    #     chain = prompt | groq_model | StrOutputParser()
-    # else:
     chain = prompt | llm.with_structured_output(answer)
 
     return chain
 
 
-def gen_answer(chunk1,chunk2,chunk3):
-    chain = setup_model()
+def gen_answer(chain,chunk1,chunk2,chunk3):
+
     res = chain.invoke({"chunk1":chunk1,"chunk2":chunk2,"chunk3":chunk3})
-    # if model_selected == 'llama-3.1-8b':
-    #     result = re.sub(r'(?:\*\*Summary(?: in \w+)?\*\*:|^.*?:)\s*(.*)', '', res)
-    # else:
     result = [res.summary_clip1,res.summary_clip2,res.summary_clip3]
     return result
 
@@ -111,7 +116,12 @@ def get_video_id(url):
   video_id = parse_qs(query).get('v', [None])[0]
   return video_id
 
+def response_request(index,query,chain):
+    all_results = query_index(index,query)
+    texts = [t.get('text') for t in all_results]
 
+    summary_results = gen_answer(chain,texts[0],texts[1],texts[2])
+    return summary_results,all_results
 
 
 

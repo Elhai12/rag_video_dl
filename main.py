@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_chat import message
-from functions import query_index,gen_answer,get_video_id
+from functions import query_index,gen_answer,get_video_id,import_index,setup_model
 
 
 def is_hebrew(text):
@@ -37,6 +37,8 @@ def clear_history():
 
 st.set_page_config(page_title="Smart Video RAG", page_icon="🤖", layout="wide")
 
+index = import_index()
+chain = setup_model()
 
 col1, col2, col3 = st.columns([1,1,1])
 with col1:
@@ -55,10 +57,10 @@ with col3:
 if "history" not in st.session_state:
     st.session_state.history = []
 
-def chat_with_bot(user_input):
-    transcripts = query_index(user_input)
+def chat_with_bot(index,user_input,chain):
+    transcripts = query_index(index,user_input)
     texts = [c.get("text") for c in transcripts]
-    answer = gen_answer(texts[0], texts[1], texts[2])
+    answer = gen_answer(chain,texts[0], texts[1], texts[2])
     videos = []
     for video in transcripts:
         text = video.get('text')
@@ -71,7 +73,7 @@ def chat_with_bot(user_input):
 def send_message():
     user_message = st.session_state.user_input.strip()
     if user_message:
-        bot_response, relevant_docs, videos = chat_with_bot(user_message)
+        bot_response, relevant_docs, videos = chat_with_bot(index,user_message,chain)
         st.session_state.history.append({"user": user_message, "bot": bot_response, "videos": videos})
         st.session_state.user_input = ""
 
