@@ -19,3 +19,8 @@ langchain-groq = "^0.3.2"
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.poetry.packages]
+packages = [
+    { include = "rag_video_dl", from = "src" }
+]
