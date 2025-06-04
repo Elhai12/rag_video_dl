@@ -12,7 +12,7 @@ import re
 
 @st.cache_resource
 def import_index():
-    key_pincone = st.secrets[""]
+    key_pincone = st.secrets["pincone"]
 
     index_name = "rag-video"
     pc = Pinecone(api_key=key_pincone)
@@ -50,8 +50,8 @@ def query_index(query, top_k=3):
 
 @st.cache_resource
 def setup_model(model_selected):
-    key_mistral = st.secrets[""]
-    groq_key = st.secrets[""]
+    key_mistral = st.secrets["mistral"]
+    groq_key = st.secrets["groq"]
     llm = ChatMistralAI(
         model="devstral-small-2505",
 
