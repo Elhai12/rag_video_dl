@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "rag-video-dl"
+version = "0.1.0"
+description = ""
+authors = ["Elhai12 <elhais12@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+streamlit = "^1.45.1"
+streamlit-chat = "^0.1.1"
+pinecone = "^7.0.2"
+langchain-mistralai = "^0.2.10"
+langchain = "^0.3.25"
+pydantic = "^2.11.5"
+langchain-groq = "^0.3.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
