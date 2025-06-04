@@ -49,9 +49,11 @@ def query_index(query, top_k=3):
     return results_data
 
 @st.cache_resource
-def setup_model(model_selected):
+def setup_model():
     key_mistral = st.secrets["mistral"]
+
     groq_key = st.secrets["groq"]
+
     llm = ChatMistralAI(
         model="devstral-small-2505",
 
@@ -64,7 +66,7 @@ def setup_model(model_selected):
     )
     system_prompt = SystemMessagePromptTemplate.from_template(
         """
-         Create quality summarize for the three provided transcript's clips.         
+         Create quality summarize for each part of th three provided transcript's clips.         
          'Do not use external knowledge or assumptions completely!'. 
          minimum 5 sentences 
         """
@@ -79,26 +81,29 @@ def setup_model(model_selected):
                 "clip 1: {chunk1}\n"
                 "clip 2: {chunk2}\n"
                 "clip 3: {chunk3}\n\n"
-                "Summary: Based solely on transcripts the provided\n\n")
+               )
         ]
     )
     class answer(BaseModel):
-        summary : str
-    if model_selected == 'llama-3.1-8b':
-        chain = prompt | groq_model | StrOutputParser()
-    else:
-        chain = prompt | llm.with_structured_output(answer)
+        summary_clip1 : str
+        summary_clip2: str
+        summary_clip3: str
+
+    # if model_selected == 'llama-3.1-8b':
+    #     chain = prompt | groq_model | StrOutputParser()
+    # else:
+    chain = prompt | llm.with_structured_output(answer)
 
     return chain
 
 
-def gen_answer(model_selected,chunk1,chunk2,chunk3):
-    chain = setup_model(model_selected)
+def gen_answer(chunk1,chunk2,chunk3):
+    chain = setup_model()
     res = chain.invoke({"chunk1":chunk1,"chunk2":chunk2,"chunk3":chunk3})
-    if model_selected == 'llama-3.1-8b':
-        result = re.sub(r'(?:\*\*Summary(?: in \w+)?\*\*:|^.*?:)\s*(.*)', '', res)
-    else:
-        result = res.summary
+    # if model_selected == 'llama-3.1-8b':
+    #     result = re.sub(r'(?:\*\*Summary(?: in \w+)?\*\*:|^.*?:)\s*(.*)', '', res)
+    # else:
+    result = [res.summary_clip1,res.summary_clip2,res.summary_clip3]
     return result
 
 def get_video_id(url):

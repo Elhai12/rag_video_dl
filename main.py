@@ -40,13 +40,13 @@ st.set_page_config(page_title="Smart Video RAG", page_icon="🤖", layout="wide"
 
 col1, col2, col3 = st.columns([1,1,1])
 with col1:
-    model_selected = st.radio(
-        "Choose model:",
-        ["devstral-small", "llama-3.1-8b"],
-        label_visibility="visible",
-    )
-    st.markdown(f"<h1 style='font-size:14px;{model_selected}'></h1>",unsafe_allow_html=True)
-
+    # model_selected = st.radio(
+    #     "Choose model:",
+    #     ["devstral-small", "llama-3.1-8b"],
+    #     label_visibility="visible",
+    # )
+    # st.markdown(f"<h1 style='font-size:14px;{model_selected}'></h1>",unsafe_allow_html=True)
+    st.write("")
 with col2:
     st.image("image3.png")
 with col3:
@@ -55,43 +55,63 @@ with col3:
 if "history" not in st.session_state:
     st.session_state.history = []
 
-def chat_with_bot(user_input, model_selected):
+def chat_with_bot(user_input):
     transcripts = query_index(user_input)
     texts = [c.get("text") for c in transcripts]
-    answer = gen_answer(model_selected, texts[0], texts[1], texts[2])
+    answer = gen_answer(texts[0], texts[1], texts[2])
     videos = []
     for video in transcripts:
         text = video.get('text')
         video_id = get_video_id(video.get("url"))
         start = int(video.get("start"))
         url = f"https://www.youtube.com/embed/{video_id}?start={start}"
-        videos.append({"title": video.get("title"), "url": url, "text": text})
+        videos.append({"title": video.get("title"), "url": url, "text": text,"start":start})
     return answer, texts, videos
 
 def send_message():
     user_message = st.session_state.user_input.strip()
     if user_message:
-        bot_response, relevant_docs, videos = chat_with_bot(user_message, model_selected)
+        bot_response, relevant_docs, videos = chat_with_bot(user_message)
         st.session_state.history.append({"user": user_message, "bot": bot_response, "videos": videos})
         st.session_state.user_input = ""
 
 for i, msg in enumerate(st.session_state.history):
     st.markdown(dynamic_text(msg["user"], is_user=True), unsafe_allow_html=True)
-    st.markdown(dynamic_text(msg["bot"], is_user=False), unsafe_allow_html=True)
+    zip_ms_video = zip([ms for ms in msg["bot"]],[vid for vid in msg['videos']])
+    for ms,video in zip_ms_video:
+        col1, col2, col3 = st.columns([1,1,1])
+        with col1:
+            st.write("")
+        with col2:
+            st.markdown(
+                f"""
+                <div>
+                    <span style="font-size: 18px; font-weight: bold;">{video['title']}</span>
+                    <br>
+                    <span style="font-size: 14px; color: gray;">
+                        Starts at: {"Minute " + str(round(video['start'] / 60, 2)) if video['start'] <= 3600 else "Hour " + str(round(video['start'] / 3600, 2))}
+                    </span>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
+        with col3:
+            st.write("")
+        col1, col2,col3 = st.columns([2,3,1])
+        with col1:
+            st.markdown(dynamic_text(ms, is_user=False), unsafe_allow_html=True)
 
-    with st.expander("See relevant clips"):
-        for video in msg['videos']:
-            st.markdown(f"<div class='clip-title'>{video['title']}</div>", unsafe_allow_html=True)
-            col1, col2 = st.columns([2,1])
-            with col1:
-                st.markdown(
-                    f"""
-                    <iframe width="560" height="315" src="{video['url']}" 
-                    frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            with col2:
+        with col2:
+            st.markdown(
+                f"""
+                <iframe width="560" height="315" src="{video['url']}" 
+                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                """,
+
+                unsafe_allow_html=True,
+            )
+        with col3:
+            with st.expander("Transcript",icon="📄"):
                 st.write(video['text'])
 with st.container():
     col1,col2 = st.columns([8,2])
