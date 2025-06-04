@@ -4,6 +4,7 @@ version = "0.1.0"
 description = ""
 authors = ["Elhai12 <elhais12@gmail.com>"]
 readme = "README.md"
+package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
@@ -20,7 +21,3 @@ langchain-groq = "^0.3.2"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-[tool.poetry.packages]
-packages = [
-    { include = "rag_video_dl", from = "src" }
-]
