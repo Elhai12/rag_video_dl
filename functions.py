@@ -123,9 +123,18 @@ def response_request(index,query,chain):
     summary_results = gen_answer(chain,texts[0],texts[1],texts[2])
     return summary_results,all_results
 
+def response_text(summary_results, all_results):
+    zip_results = zip(summary_results, all_results)
+    text_res = ""
+    for summary, video in zip_results:
+        start_time = int(video['start'])
+        url_fix = f"{video['url']}&start={start_time}"
+        time_label = f"Minute {round(video['start'] / 60, 2)}" if video['start'] <= 3600 else f"Hour {round(video['start'] / 3600, 2)}"
+        text_res += f"📽️ **{video['title']}**\n"
+        text_res += f"{summary}\n"
+        text_res += f"▶️ Watch here from {time_label}: {url_fix}\n\n"
 
-
-
+    return text_res
 
 
 
