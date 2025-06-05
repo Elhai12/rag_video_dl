@@ -15,7 +15,7 @@ chain = setup_model()
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 app_url = "https://rag-video-dl.onrender.com"
-WEBHOOK_URL = f"{app_url}/{TELEGRAM_TOKEN}"
+WEBHOOK_URL = f"https://rag-video-dl.onrender.com/{TELEGRAM_TOKEN}"
 
 
 class Question(BaseModel):
@@ -90,15 +90,28 @@ async def ping_loop():
             await asyncio.sleep(600)
 
 @app.on_event("startup")
+
 async def on_startup():
 
 
     try:
-        await application.bot.set_webhook(WEBHOOK_URL)
-        print(f"Webhook set to {WEBHOOK_URL}")
+        await application.initialize()
+        await application.start()
+        print("Telegram Application initialized and started.")
+    except Exception as e:
+        print(f"Error initializing/starting Telegram application: {e}")
+
+
+    try:
+        was_set = await application.bot.set_webhook(WEBHOOK_URL)
+        if was_set:
+            print(f"✅ Webhook set successfully to: {WEBHOOK_URL}")
+        else:
+            print(f"❌ Failed to set webhook to: {WEBHOOK_URL}")
     except Exception as e:
         print(f"Error setting webhook: {e}")
 
 
     asyncio.create_task(ping_loop())
-    print("Ping loop started (every 10 minutes).")
+    print("🕰️ Ping loop task created (every 10 minutes).")
+
