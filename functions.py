@@ -130,8 +130,8 @@ def response_text(summary_results, all_results):
         start_time = int(video['start'])
         url_fix = f"{video['url']}&start={start_time}"
         time_label = f"Minute {round(video['start'] / 60, 2)}" if video['start'] <= 3600 else f"Hour {round(video['start'] / 3600, 2)}"
-        text_res += f"📽️ **{video['title']}** \n"
-        text_res += f"{summary} \n"
+        text_res += f"📽️ **{video['title']}**  \n"
+        text_res += f"{summary}  \n"
         text_res += f"▶️ Watch here from {time_label}: {url_fix}\n\n"
 
     return text_res
