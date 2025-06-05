@@ -45,16 +45,38 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     user_message = update.message.text
-    try:
 
-        response = get_answer(Question(question=user_message))
-        model_response = response["response"]
+
+    try:
+        await update.message.reply_text("_Processing…_", parse_mode="Markdown")
+    except Exception:
+        pass
+
+
+    try:
+        loop = asyncio.get_event_loop()
+        answer = await asyncio.wait_for(
+            loop.run_in_executor(
+                None,
+                get_answer,
+                Question(question=user_message)
+            ),
+            timeout=30.0
+        )
+        model_response = answer["response"]
+    except asyncio.TimeoutError:
+        model_response = "The model not response in the time."
     except Exception as e:
         model_response = f"error: {e}"
 
-    await update.message.reply_text(model_response)
+
+    try:
+        await update.message.reply_text(model_response)
+    except Exception as e:
+        print(f"Error sending reply to Telegram: {e}")
+
+
 
 
 
