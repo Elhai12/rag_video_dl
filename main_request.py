@@ -54,7 +54,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         model_response = f"error: {e}"
 
-    await update.message.reply_text(model_response,parse_mode="Markdown")
+    await update.message.reply_text(model_response)
 
 
 
