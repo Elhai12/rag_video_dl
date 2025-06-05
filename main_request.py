@@ -68,7 +68,7 @@ async def telegram_webhook(request: Request):
 
     try:
         update = Update.de_json(await request.json(), application.bot)
-        application.process_update(update)
+        await application.process_update(update)
     except Exception as e:
         print(f"Error handling update: {e}")
     return {"status": "ok"}
