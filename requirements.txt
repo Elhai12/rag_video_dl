@@ -81,3 +81,5 @@ watchdog==6.0.0 ; python_version >= "3.12" and python_version < "4.0" and platfo
 zstandard==0.23.0 ; python_version >= "3.12" and python_version < "4.0"
 python-telegram-bot
 requests
+asyncio
+httpx

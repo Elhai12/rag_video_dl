@@ -6,15 +6,16 @@ import os
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from dotenv import load_dotenv
-
+import httpx
+import asyncio
 app = FastAPI()
 
 index = import_index()
 chain = setup_model()
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-
-WEBHOOK_URL = f"https://rag-video-dl.onrender.com/{TELEGRAM_TOKEN}"
+app_url = "https://rag-video-dl.onrender.com"
+WEBHOOK_URL = f"{app_url}/{TELEGRAM_TOKEN}"
 
 
 class Question(BaseModel):
@@ -30,6 +31,9 @@ def get_answer(question: Question):
         "format": "markdown"
     }
 
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
 application = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
 
@@ -68,3 +72,33 @@ async def telegram_webhook(request: Request):
     except Exception as e:
         print(f"Error handling update: {e}")
     return {"status": "ok"}
+
+async def ping_loop():
+
+    if not app_url:
+        print("APP_URL not define")
+        return
+
+    async with httpx.AsyncClient() as client:
+        while True:
+            try:
+                ping_url = f"{app_url}/health"
+                resp = await client.get(ping_url, timeout=10.0)
+                print(f"[Ping] GET {ping_url} → {resp.status_code}")
+            except Exception as e:
+                print(f"[Ping Error] {e}")
+            await asyncio.sleep(600)
+
+@app.on_event("startup")
+async def on_startup():
+
+
+    try:
+        await application.bot.set_webhook(WEBHOOK_URL)
+        print(f"Webhook set to {WEBHOOK_URL}")
+    except Exception as e:
+        print(f"Error setting webhook: {e}")
+
+
+    asyncio.create_task(ping_loop())
+    print("Ping loop started (every 10 minutes).")
