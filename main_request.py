@@ -16,5 +16,8 @@ class Question(BaseModel):
 @app.post("/ask")
 def get_answer(question: Question):
     summaries,videos = response_request(index,question.question,chain)
-
-    return {"response": response_text(summaries,videos)}
+    response_text_all = response_text(summaries, videos)
+    return {
+        "response": response_text_all,
+        "format": "markdown"
+    }
