@@ -163,7 +163,7 @@ def response_text(summary_results, all_results):
             time_label = f"Minute {sec_hour_min(video['start'],'minute')}" if video['start'] <= 3600 else f"Hour {sec_hour_min(video['start'],'hour')}"
             text_res += f"📽️ <b>{video['title']}</b>\n"
             text_res += f"{summary[0]}\n"
-            text_res += f"▶️ <b>Watch here from {time_label}: {url_fix}</b>\n"
+            text_res += f"▶️ <b>Watch here from {time_label}: {url_fix}</b>\n\n"
     if text_res != "":
         return text_res
     else:
