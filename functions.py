@@ -162,7 +162,7 @@ def response_text(summary_results, all_results):
         if summary[1]>=5:
             start_time = int(video['start'])
             url_fix = f"{video['url']}&start={start_time}"
-            time_label = f"Minute {sec_hour_min(video['start'],'minute')}" if video['start'] <= 3600 else f"Hour {sec_hour_min(video['start'],'hour')}"
+            time_label = f"{seconds_to_time_format(video['start'])}"
             text_res += f"📽️ <b>{video['title']}</b>\n\n"
             text_res += f"{summary[0]}\n\n"
             text_res += f"▶️ <b>Watch here from {time_label}: {url_fix}</b>\n\n"

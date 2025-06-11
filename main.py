@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_chat import message
-from functions import query_index,gen_answer,get_video_id,import_index,setup_model,sec_hour_min
+from functions import query_index,gen_answer,get_video_id,import_index,setup_model,seconds_to_time_format
 
 
 def is_hebrew(text):
@@ -94,9 +94,8 @@ for i, msg in enumerate(st.session_state.history):
                         <span style="font-size: 18px; font-weight: bold;">{video['title']}</span>
                         <br>
                         <span style="font-size: 14px; color: gray;">
-                            Starts at: 
-                      {f"Minute {sec_hour_min(video['start'],'minute')}" if video['start'] <= 3600 
-                    else f"Hour {sec_hour_min(video['start'],'hour')}"}
+                            Starts form: 
+                      {seconds_to_time_format(video['start'])}
                         </span>
                     </div>
                     """,
