@@ -74,7 +74,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
     try:
-        await update.message.reply_text(model_response, parse_mode=ParseMode.MARKDOWN)
+        await update.message.reply_text(model_response, parse_mode=ParseMode.HTML)
     except Exception as e:
         print(f"Error sending reply to Telegram: {e}")
 

@@ -161,13 +161,13 @@ def response_text(summary_results, all_results):
             start_time = int(video['start'])
             url_fix = f"{video['url']}&start={start_time}"
             time_label = f"Minute {sec_hour_min(video['start'],'minute')}" if video['start'] <= 3600 else f"Hour {sec_hour_min(video['start'],'hour')}"
-            text_res += f"📽️ **{video['title']}**  \n\n"
+            text_res += f"📽️ <b>{video['title']}</b> \n\n"
             text_res += f"{summary[0]}  \n\n"
-            text_res += f"▶️ **Watch here from {time_label}: {url_fix}**\n\n"
+            text_res += f"▶️ <b>Watch here from {time_label}: {url_fix}</b>\n\n"
     if text_res != "":
         return text_res
     else:
-        return "**The question is not relevant to the deep learning topic.**"
+        return "<b>The question is not relevant to the deep learning topic.</b>"
 
 
 
