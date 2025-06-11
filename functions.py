@@ -124,6 +124,7 @@ def gen_answer(chain,question,chunk1,chunk2,chunk3):
     result = []
     for clip in range(1, 4):
         sum = getattr(res, f"summary_clip{clip}")
+        sum  = sum.replace(f"Clip {clip}",'')
         score = getattr(res, f"score_clip{clip}")
         result.append([sum, score])
 

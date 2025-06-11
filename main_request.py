@@ -8,6 +8,8 @@ from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, fil
 from dotenv import load_dotenv
 import httpx
 import asyncio
+from telegram.constants import ParseMode
+
 app = FastAPI()
 
 index = import_index()
@@ -72,7 +74,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
     try:
-        await update.message.reply_text(model_response)
+        await update.message.reply_text(model_response, parse_mode=ParseMode.MARKDOWN)
     except Exception as e:
         print(f"Error sending reply to Telegram: {e}")
 
