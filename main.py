@@ -1,6 +1,6 @@
 import streamlit as st
 from streamlit_chat import message
-from functions import query_index,gen_answer,get_video_id,import_index,setup_model
+from functions import query_index,gen_answer,get_video_id,import_index,setup_model,sec_hour_min
 
 
 def is_hebrew(text):
@@ -60,7 +60,7 @@ if "history" not in st.session_state:
 def chat_with_bot(index,user_input,chain):
     transcripts = query_index(index,user_input)
     texts = [c.get("text") for c in transcripts]
-    answer = gen_answer(chain,texts[0], texts[1], texts[2])
+    answer = gen_answer(chain,user_input,texts[0], texts[1], texts[2])
     videos = []
     for video in transcripts:
         text = video.get('text')
@@ -77,44 +77,54 @@ def send_message():
         st.session_state.history.append({"user": user_message, "bot": bot_response, "videos": videos})
         st.session_state.user_input = ""
 
+count_response = 0
 for i, msg in enumerate(st.session_state.history):
     st.markdown(dynamic_text(msg["user"], is_user=True), unsafe_allow_html=True)
     zip_ms_video = zip([ms for ms in msg["bot"]],[vid for vid in msg['videos']])
     for ms,video in zip_ms_video:
-        col1, col2, col3 = st.columns([1,1,1])
-        with col1:
-            st.write("")
-        with col2:
-            st.markdown(
-                f"""
-                <div>
-                    <span style="font-size: 18px; font-weight: bold;">{video['title']}</span>
-                    <br>
-                    <span style="font-size: 14px; color: gray;">
-                        Starts at: {"Minute " + str(round(video['start'] / 60, 2)) if video['start'] <= 3600 else "Hour " + str(round(video['start'] / 3600, 2))}
-                    </span>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-        with col3:
-            st.write("")
-        col1, col2,col3 = st.columns([2,3,1])
-        with col1:
-            st.markdown(dynamic_text(ms, is_user=False), unsafe_allow_html=True)
 
-        with col2:
-            st.markdown(
-                f"""
-                <iframe width="560" height="315" src="{video['url']}" 
-                frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-                """,
+        if ms[1]>=5:
+            col1, col2, col3 = st.columns([1,1,1])
+            with col1:
+                st.write("")
+            with col2:
+                st.markdown(
+                    f"""
+                    <div>
+                        <span style="font-size: 18px; font-weight: bold;">{video['title']}</span>
+                        <br>
+                        <span style="font-size: 14px; color: gray;">
+                            Starts at: 
+                      {f"Minute {sec_hour_min(video['start'],'minute')}" if video['start'] <= 3600 
+                    else f"Hour {sec_hour_min(video['start'],'hour')}"}
+                        </span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+            with col3:
+                st.write("")
+            col1, col2,col3 = st.columns([2,3,1])
+            with col1:
+                st.markdown(dynamic_text(ms[0]+ f"\n\n<b>Relevance Score: {str(ms[1])}</b>", is_user=False), unsafe_allow_html=True)
+                # st.markdown(dynamic_text(, is_user=False), unsafe_allow_html=True)
+            with col2:
+                st.markdown(
+                    f"""
+                    <iframe width="560" height="315" src="{video['url']}" 
+                    frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    """,
 
-                unsafe_allow_html=True,
-            )
-        with col3:
-            with st.expander("Transcript",icon="📄"):
-                st.write(video['text'])
+                    unsafe_allow_html=True,
+                )
+            with col3:
+                with st.expander("Transcript",icon="📄"):
+                    st.write(video['text'])
+            count_response+=1
+
+    if count_response==0:
+        st.markdown(dynamic_text("<b>The question is not relevant to the deep learning topic</b>", is_user=False), unsafe_allow_html=True)
+
 with st.container():
     col1,col2 = st.columns([8,2])
     with col1:
