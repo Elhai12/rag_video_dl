@@ -142,14 +142,16 @@ def response_request(index,query,chain):
     summary_results = gen_answer(chain,query,texts[0],texts[1],texts[2])
     return summary_results,all_results
 
-def sec_hour_min(seconds,hour_minute):
-    i=1
-    if hour_minute == 'hour':
-        i = 60
-    hours_minutes = int(seconds//(60*i))
-    rest = seconds%(60*i)
-    rest_min_sec = int(rest/(1*i))
-    return f"{hours_minutes}:{rest_min_sec}"
+def seconds_to_time_format(seconds):
+    if seconds < 3600:
+        minutes = seconds // 60
+        secs = seconds % 60
+        return f"{minutes:02}:{secs:.2f}"
+    else:
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        secs = seconds % 60
+        return f"{hours:02}:{minutes:02}:{secs:02}"
 
 
 
@@ -161,8 +163,8 @@ def response_text(summary_results, all_results):
             start_time = int(video['start'])
             url_fix = f"{video['url']}&start={start_time}"
             time_label = f"Minute {sec_hour_min(video['start'],'minute')}" if video['start'] <= 3600 else f"Hour {sec_hour_min(video['start'],'hour')}"
-            text_res += f"📽️ <b>{video['title']}</b>\n"
-            text_res += f"{summary[0]}\n"
+            text_res += f"📽️ <b>{video['title']}</b>\n\n"
+            text_res += f"{summary[0]}\n\n"
             text_res += f"▶️ <b>Watch here from {time_label}: {url_fix}</b>\n\n"
     if text_res != "":
         return text_res
