@@ -144,13 +144,13 @@ def response_request(index,query,chain):
 
 def seconds_to_time_format(seconds):
     if seconds < 3600:
-        minutes = seconds // 60
-        secs = seconds % 60
-        return f"{minutes:02}:{secs:.2f}"
+        minutes = int(seconds // 60)
+        secs = int(seconds % 60)
+        return f"{minutes:02}:{secs:02}"
     else:
-        hours = seconds // 3600
-        minutes = (seconds % 3600) // 60
-        secs = seconds % 60
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
         return f"{hours:02}:{minutes:02}:{secs:02}"
 
 
