@@ -78,7 +78,13 @@ def setup_model():
         Analyze the following three clips transcripts in the context of a specific user question. Your tasks are as follows:
 
         Summarize how each clip addresses the question.
-
+        
+        Assign a relevance score (0-10) for each transcript based on how well it answers the question:
+        
+        0: Completely unrelated to the topic.
+        
+        10: Fully and comprehensively answers the question.
+        
         If none of the transcripts are relevant, return a relevance score of 0 for all and explain why.
 
         """
@@ -100,13 +106,13 @@ def setup_model():
 
     class answer(BaseModel):
         summary_clip1: str
-        # score_clip1: int
+        score_clip1: int
         # start_time1: float
         summary_clip2: str
-        # score_clip2: int
+        score_clip2: int
         # start_time2: float
         summary_clip3: str
-        # score_clip3: int
+        score_clip3: int
         # start_time3: float
 
     chain = prompt | llm.with_structured_output(answer)
@@ -120,9 +126,9 @@ def gen_answer(chain, question, chunk1, chunk2, chunk3):
     for clip in range(1, 4):
         sum = getattr(res, f"summary_clip{clip}")
         sum = sum.replace(f"Clip {clip}", '')
-        # score = getattr(res, f"score_clip{clip}")
+        score = getattr(res, f"score_clip{clip}")
         # start_time = int(getattr(res, f"start_time{clip}"))
-        result.append([sum])
+        result.append([sum,score])
 
     return result
 
