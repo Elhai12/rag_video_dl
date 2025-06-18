@@ -42,7 +42,7 @@ def query_index(index,query, top_k=3):
     }
 
     results = index.search(
-        namespace="two_minutes_chunks",
+        namespace="five_minutes_chunks",
         query= query_payload
     )
     results_data = []
@@ -56,6 +56,7 @@ def query_index(index,query, top_k=3):
             "text": match['fields'].get('chunk_text', ''),
             "start": metadata.get('start', ''),
             "end": metadata.get('end', ''),
+            "transcripts":metadata.get('transcripts', ''),
             "score": score
         })
     return results_data
@@ -87,6 +88,8 @@ def setup_model():
         
         10: Fully and comprehensively answers the question.
         
+        And give the most relevant start time from the transcript (in seconds)
+        
         If none of the transcripts are relevant, return a relevance score of 0 for all and explain why.
           
         """
@@ -108,10 +111,13 @@ def setup_model():
     class answer(BaseModel):
         summary_clip1 : str
         score_clip1 : int
+        start_time1 : float
         summary_clip2: str
         score_clip2: int
+        start_time2: float
         summary_clip3: str
         score_clip3: int
+        start_time3: float
 
     chain = prompt | llm.with_structured_output(answer)
 
@@ -126,7 +132,8 @@ def gen_answer(chain,question,chunk1,chunk2,chunk3):
         sum = getattr(res, f"summary_clip{clip}")
         sum  = sum.replace(f"Clip {clip}",'')
         score = getattr(res, f"score_clip{clip}")
-        result.append([sum, score])
+        start_time = int(getattr(res, f"start_time{clip}"))
+        result.append([sum, score,start_time])
 
     return result
 
@@ -137,7 +144,7 @@ def get_video_id(url):
 
 def response_request(index,query,chain):
     all_results = query_index(index,query)
-    texts = [t.get('text') for t in all_results]
+    texts = [[f"Context: {c.get("text").split("\n")[0]}"] + [c.get("transcripts")] for c in all_results]
 
     summary_results = gen_answer(chain,query,texts[0],texts[1],texts[2])
     return summary_results,all_results
@@ -157,12 +164,14 @@ def seconds_to_time_format(seconds):
 
 def response_text(summary_results, all_results):
     zip_results = zip(summary_results, all_results)
+    zip_results =sorted(zip_results,key=lambda x:x[0][1],reverse=True)
     text_res = ""
     for summary, video in zip_results:
         if summary[1]>=5:
-            start_time = int(video['start'])
+            # start_time = int(video['start'])
+            start_time = int(summary[0][2])
             url_fix = f"{video['url']}&start={start_time}"
-            time_label = f"{seconds_to_time_format(video['start'])}"
+            time_label = f"{seconds_to_time_format(summary[0][2])}"
             text_res += f"📽️ <b>{video['title']}</b>\n\n"
             text_res += f"{summary[0]}\n\n"
             text_res += f"▶️ <b>Watch here from {time_label}: {url_fix}</b>\n\n"

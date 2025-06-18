@@ -56,16 +56,21 @@ with col3:
 
 if "history" not in st.session_state:
     st.session_state.history = []
+# if "count_res" not in st.session_state:
+#     st.session_state.count_res = 0
 
 def chat_with_bot(index,user_input,chain):
     transcripts = query_index(index,user_input)
-    texts = [c.get("text") for c in transcripts]
+
+    texts = [[f"Context: {c.get("text").split("\n")[0]}"] + [c.get("transcripts")] for c in transcripts]
+
     answer = gen_answer(chain,user_input,texts[0], texts[1], texts[2])
     videos = []
-    for video in transcripts:
+    for i,video in enumerate(transcripts):
         text = video.get('text')
         video_id = get_video_id(video.get("url"))
-        start = int(video.get("start"))
+        #### start = int(video.get("start"))
+        start = answer[i][2]
         url = f"https://www.youtube.com/embed/{video_id}?start={start}"
         videos.append({"title": video.get("title"), "url": url, "text": text,"start":start})
     return answer, texts, videos
@@ -77,13 +82,18 @@ def send_message():
         st.session_state.history.append({"user": user_message, "bot": bot_response, "videos": videos})
         st.session_state.user_input = ""
 
-count_response = 0
+
+
 for i, msg in enumerate(st.session_state.history):
+
+    count_res = 0
     st.markdown(dynamic_text(msg["user"], is_user=True), unsafe_allow_html=True)
     zip_ms_video = zip([ms for ms in msg["bot"]],[vid for vid in msg['videos']])
+    zip_ms_video = sorted(zip_ms_video, key=lambda x: x[0][1], reverse=True)
+
     for ms,video in zip_ms_video:
 
-        if ms[1]>=5:
+        if ms[1]>=2:
             col1, col2, col3 = st.columns([1,1,1])
             with col1:
                 st.write("")
@@ -118,10 +128,11 @@ for i, msg in enumerate(st.session_state.history):
                 )
             with col3:
                 with st.expander("Transcript",icon="📄"):
-                    st.write(video['text'])
-            count_response+=1
+                    clean_transcript =  video['text'].split('\n', 1)[1]
+                    st.write(clean_transcript)
+            count_res+=1
 
-    if count_response==0:
+    if count_res==0:
         st.markdown(dynamic_text("<b>The question is not relevant to the deep learning topic</b>", is_user=False), unsafe_allow_html=True)
 
 with st.container():
