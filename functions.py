@@ -169,9 +169,9 @@ def response_text(summary_results, all_results):
     for summary, video in zip_results:
         if summary[1]>=5:
             # start_time = int(video['start'])
-            start_time = int(summary[0][2])
+            start_time = int(summary[2])
             url_fix = f"{video['url']}&start={start_time}"
-            time_label = f"{seconds_to_time_format(summary[0][2])}"
+            time_label = f"{seconds_to_time_format(summary[2])}"
             text_res += f"📽️ <b>{video['title']}</b>\n\n"
             text_res += f"{summary[0]}\n\n"
             text_res += f"▶️ <b>Watch here from {time_label}: {url_fix}</b>\n\n"
