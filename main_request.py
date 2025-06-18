@@ -1,4 +1,4 @@
-from functions import response_request,import_index,setup_model,response_text
+from functions_req import response_request,import_index,setup_model,response_text
 
 from fastapi import FastAPI,Request
 from pydantic import BaseModel
@@ -64,7 +64,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 get_answer,
                 Question(question=user_message)
             ),
-            timeout=30.0
+            timeout=45.0
         )
         model_response = answer["response"]
     except asyncio.TimeoutError:

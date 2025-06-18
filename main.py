@@ -93,7 +93,7 @@ for i, msg in enumerate(st.session_state.history):
 
     for ms,video in zip_ms_video:
 
-        if ms[1]>=2:
+        if ms[1]>=5:
             col1, col2, col3 = st.columns([1,1,1])
             with col1:
                 st.write("")

@@ -1,0 +1,165 @@
+import streamlit as st
+from langsmith import expect
+from pinecone import Pinecone, ServerlessSpec, IndexEmbed, EmbedModel
+from langchain_core.prompts import PromptTemplate, ChatPromptTemplate, HumanMessagePromptTemplate, \
+    SystemMessagePromptTemplate
+from langchain_core.output_parsers.string import StrOutputParser
+from langchain.output_parsers import PydanticOutputParser
+from pydantic import BaseModel
+from langchain_mistralai import ChatMistralAI
+from langchain_groq import ChatGroq
+import json
+from urllib.parse import urlparse, parse_qs
+import os
+from dotenv import load_dotenv
+
+
+
+def import_index():
+    try:
+        key_pincone = st.secrets.get("pincone")
+    except Exception as e:
+        if "streamlit" in str(e).lower():
+            load_dotenv()
+            key_pincone = os.getenv("pincone")
+
+    index_name = "rag-video"
+    pc = Pinecone(api_key=key_pincone)
+    index = pc.Index(index_name)
+    return index
+
+
+def query_index(index, query, top_k=3):
+    query_payload = {
+        "inputs": {
+            "text": query
+        },
+        "top_k": top_k
+    }
+
+    results = index.search(
+        namespace="two_minutes_chunks",
+        query=query_payload
+    )
+    results_data = []
+    for match in results['result']['hits']:
+        metadata = match['fields']['metadata']
+        metadata = json.loads(metadata)
+        score = match['_score']
+        results_data.append({
+            "url": metadata.get('url', ''),
+            "title": metadata.get('title', ''),
+            "text": match['fields'].get('chunk_text', ''),
+            "start": metadata.get('start', ''),
+            "end": metadata.get('end', ''),
+            # "transcripts": metadata.get('transcripts', ''),
+            "score": score
+        })
+    return results_data
+
+
+
+def setup_model():
+    try:
+        key_mistral = st.secrets.get("mistral")
+    except Exception as e:
+        if "streamlit" in str(e).lower():
+            load_dotenv()
+            key_mistral = os.getenv("mistral")
+
+    llm = ChatMistralAI(
+        model="devstral-small-2505",
+
+        mistral_api_key=key_mistral
+    )
+
+    system_prompt = SystemMessagePromptTemplate.from_template(
+        """
+        Analyze the following three clips transcripts in the context of a specific user question. Your tasks are as follows:
+
+        Summarize how each clip addresses the question.
+
+        If none of the transcripts are relevant, return a relevance score of 0 for all and explain why.
+
+        """
+    )
+
+    prompt = ChatPromptTemplate(
+        [
+            system_prompt,
+            HumanMessagePromptTemplate.from_template(
+                "Question: {question}\n\n"
+                "Provided transcripts:\n"
+                "clip 1: {chunk1}\n"
+                "clip 2: {chunk2}\n"
+                "clip 3: {chunk3}\n\n"
+
+            )
+        ]
+    )
+
+    class answer(BaseModel):
+        summary_clip1: str
+        # score_clip1: int
+        # start_time1: float
+        summary_clip2: str
+        # score_clip2: int
+        # start_time2: float
+        summary_clip3: str
+        # score_clip3: int
+        # start_time3: float
+
+    chain = prompt | llm.with_structured_output(answer)
+
+    return chain
+
+
+def gen_answer(chain, question, chunk1, chunk2, chunk3):
+    res = chain.invoke({"question": question, "chunk1": chunk1, "chunk2": chunk2, "chunk3": chunk3})
+    result = []
+    for clip in range(1, 4):
+        sum = getattr(res, f"summary_clip{clip}")
+        sum = sum.replace(f"Clip {clip}", '')
+        # score = getattr(res, f"score_clip{clip}")
+        # start_time = int(getattr(res, f"start_time{clip}"))
+        result.append([sum])
+
+    return result
+
+def response_request(index,query,chain):
+    all_results = query_index(index,query)
+    texts = [c.get("text") for c in all_results]
+
+    summary_results = gen_answer(chain,query,texts[0],texts[1],texts[2])
+    return summary_results,all_results
+
+def seconds_to_time_format(seconds):
+    if seconds < 3600:
+        minutes = int(seconds // 60)
+        secs = int(seconds % 60)
+        return f"{minutes:02}:{secs:02}"
+    else:
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        return f"{hours:02}:{minutes:02}:{secs:02}"
+
+
+
+def response_text(summary_results, all_results):
+    zip_results = zip(summary_results, all_results)
+    # zip_results =sorted(zip_results,key=lambda x:x[0][1],reverse=True)
+    text_res = ""
+    for summary, video in zip_results:
+        if summary[1]>=5:
+            start_time = int(video['start'])
+
+            url_fix = f"{video['url']}&start={start_time}"
+            time_label = f"{seconds_to_time_format(video['start'])}"
+            text_res += f"📽️ <b>{video['title']}</b>\n\n"
+            text_res += f"{summary[0]}\n\n"
+            text_res += f"▶️ <b>Watch here from {time_label}: {url_fix}</b>\n\n"
+    if text_res != "":
+        return text_res
+    else:
+        return "<b>The question is not relevant to the deep learning topic.</b>"
