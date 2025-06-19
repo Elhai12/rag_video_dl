@@ -14,7 +14,7 @@ import os
 from dotenv import load_dotenv
 
 
-
+@st.cache_resource
 def import_index():
     try:
         key_pincone = st.secrets.get("pincone")
@@ -52,13 +52,12 @@ def query_index(index, query, top_k=3):
             "text": match['fields'].get('chunk_text', ''),
             "start": metadata.get('start', ''),
             "end": metadata.get('end', ''),
-            # "transcripts": metadata.get('transcripts', ''),
             "score": score
         })
     return results_data
 
 
-
+@st.cache_resource
 def setup_model():
     try:
         key_mistral = st.secrets.get("mistral")
@@ -78,13 +77,13 @@ def setup_model():
         Analyze the following three clips transcripts in the context of a specific user question. Your tasks are as follows:
 
         Summarize how each clip addresses the question.
-        
+
         Assign a relevance score (0-10) for each transcript based on how well it answers the question:
-        
+
         0: Completely unrelated to the topic.
-        
+
         10: Fully and comprehensively answers the question.
-        
+
         If none of the transcripts are relevant, return a relevance score of 0 for all and explain why.
 
         """
@@ -107,13 +106,10 @@ def setup_model():
     class answer(BaseModel):
         summary_clip1: str
         score_clip1: int
-        # start_time1: float
         summary_clip2: str
         score_clip2: int
-        # start_time2: float
         summary_clip3: str
         score_clip3: int
-        # start_time3: float
 
     chain = prompt | llm.with_structured_output(answer)
 
@@ -127,17 +123,24 @@ def gen_answer(chain, question, chunk1, chunk2, chunk3):
         sum = getattr(res, f"summary_clip{clip}")
         sum = sum.replace(f"Clip {clip}", '')
         score = getattr(res, f"score_clip{clip}")
-        # start_time = int(getattr(res, f"start_time{clip}"))
-        result.append([sum,score])
+        result.append([sum, score])
 
     return result
 
-def response_request(index,query,chain):
-    all_results = query_index(index,query)
-    texts = [c.get("text") for c in all_results]
 
-    summary_results = gen_answer(chain,query,texts[0],texts[1],texts[2])
-    return summary_results,all_results
+def get_video_id(url):
+    query = urlparse(url).query
+    video_id = parse_qs(query).get('v', [None])[0]
+    return video_id
+
+
+def response_request(index, query, chain):
+    all_results = query_index(index, query)
+    texts = [t.get('text') for t in all_results]
+
+    summary_results = gen_answer(chain, query, texts[0], texts[1], texts[2])
+    return summary_results, all_results
+
 
 def seconds_to_time_format(seconds):
     if seconds < 3600:
@@ -151,15 +154,12 @@ def seconds_to_time_format(seconds):
         return f"{hours:02}:{minutes:02}:{secs:02}"
 
 
-
 def response_text(summary_results, all_results):
     zip_results = zip(summary_results, all_results)
-    # zip_results =sorted(zip_results,key=lambda x:x[0][1],reverse=True)
     text_res = ""
     for summary, video in zip_results:
-        if summary[1]>=5:
+        if summary[1] >= 5:
             start_time = int(video['start'])
-
             url_fix = f"{video['url']}&start={start_time}"
             time_label = f"{seconds_to_time_format(video['start'])}"
             text_res += f"📽️ <b>{video['title']}</b>\n\n"
