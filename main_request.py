@@ -16,8 +16,8 @@ index = import_index()
 chain = setup_model()
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-app_url = "https://rag-video-dl.onrender.com"
-WEBHOOK_URL = f"https://rag-video-dl.onrender.com/{TELEGRAM_TOKEN}"
+app_url = os.getenv("URL")
+WEBHOOK_URL = f"{app_url}/{TELEGRAM_TOKEN}"
 
 
 class Question(BaseModel):
