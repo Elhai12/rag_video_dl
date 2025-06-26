@@ -2,6 +2,7 @@
 
 This repository contains a Streamlit application that allows users to ask questions and receive summarized answers based on video transcripts. The application identifies the most relevant segments from a playlist and a course, summarizes the key information, and provides direct links to the related video segments.
 
+**Link to streamlit app:** https://video-rag-dl.streamlit.app/
 ## Features
 
 * **Natural Language Querying**: Users can input a question in natural language.
