@@ -1,4 +1,4 @@
-from functions_req import response_request,import_index,setup_model,response_text
+from functions import response_request,import_index,setup_model,response_text
 
 from fastapi import FastAPI,Request
 from pydantic import BaseModel
