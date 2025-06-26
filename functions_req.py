@@ -38,7 +38,7 @@ def query_index(index, query, top_k=3):
     }
 
     results = index.search(
-        namespace="two_minutes_chunks",
+        namespace="my-namespace",
         query=query_payload
     )
     results_data = []
